@@ -28,7 +28,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         email,
         password,
       });
-      console.log('🚀 ~ data:', data);
 
       localStorage.setItem('token', data.access_token);
 
@@ -54,7 +53,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         email,
         password,
       });
-      console.log('🚀 ~ data:', data);
 
       localStorage.setItem('token', data.access_token);
 

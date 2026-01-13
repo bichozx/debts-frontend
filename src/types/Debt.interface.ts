@@ -14,6 +14,12 @@ export interface UpdateDebtPayload {
   description?: string;
 }
 
+export type DebtFilter = 'all' | 'pending' | 'paid';
+export interface DebtFiltersProps {
+  value: DebtFilter;
+  onChange: (value: DebtFilter) => void;
+}
+
 export interface DebtsState {
   debts: Debt[];
   summary: DebtSummary | null;

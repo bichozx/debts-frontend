@@ -23,6 +23,7 @@ export const useDebtsStore = create<DebtsState>((set, get) => ({
         debts: debts.map((d) => ({
           ...d,
           amount: Number(d.amount),
+          paid: d.status === 'PAID',
         })),
       });
     } finally {

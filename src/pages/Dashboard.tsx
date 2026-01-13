@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import type { Debt, DebtFilter } from '../types/Debt.interface';
+import { useEffect, useMemo, useState } from 'react';
 
 import CreateDebtModal from '../components/CreateDebtModal';
-import type { Debt } from '../types/Debt.interface';
 import DebtCard from '../components/DebtCard';
+import DebtFilters from '../components/DebtFilters';
 import EditDebtModal from '../components/EditDebtModal';
 import StatCard from '../components/StatCard';
 import { exportDebtsCsv } from '../services/debts/debts.service';
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const [openModal, setOpenModal] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+  const [filter, setFilter] = useState<DebtFilter>('all');
 
   useEffect(() => {
     fetchDebts();
@@ -34,6 +36,17 @@ export default function Dashboard() {
     await exportDebtsCsv();
     setExporting(false);
   };
+
+  const filteredDebts = useMemo(() => {
+    switch (filter) {
+      case 'paid':
+        return debts.filter((d) => d.paid);
+      case 'pending':
+        return debts.filter((d) => !d.paid);
+      default:
+        return debts;
+    }
+  }, [debts, filter]);
 
   return (
     <div className="space-y-6">
@@ -68,13 +81,14 @@ export default function Dashboard() {
         <StatCard label="Paid Debts" value={summary?.countPaid ?? 0} />
         <StatCard label="Pending Debts" value={summary?.countPending ?? 0} />
       </div>
+      <DebtFilters value={filter} onChange={setFilter} />
 
       {/* List */}
       <div className="space-y-3">
         {loading && <p className="text-gray-400">Loading...</p>}
 
         {!loading &&
-          debts.map((debt) => (
+          filteredDebts.map((debt) => (
             <DebtCard
               key={debt.id}
               debt={debt}
@@ -84,9 +98,12 @@ export default function Dashboard() {
             />
           ))}
 
-        {!loading && debts.length === 0 && (
-          <p className="text-gray-500 text-sm">No debts found</p>
+        {!loading && filteredDebts.length === 0 && (
+          <p className="text-gray-500 text-sm">
+            No {filter === 'all' ? '' : filter} debts found
+          </p>
         )}
+
         {editingDebt && (
           <EditDebtModal
             debt={editingDebt}
