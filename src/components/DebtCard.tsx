@@ -5,11 +5,13 @@ export default function DebtCard({
   onPay,
   onDelete,
   onEdit,
+  onView,
 }: {
   debt: Debt;
   onPay: () => void;
   onDelete: () => void;
   onEdit: () => void;
+  onView: () => void;
 }) {
   const isPaid = debt.status === 'PAID';
   return (
@@ -27,6 +29,12 @@ export default function DebtCard({
         {/* Solo si NO está pagada */}
         {!isPaid && (
           <>
+            <button
+              onClick={onView}
+              className="text-sm px-3 py-1 rounded bg-emerald-500 text-black hover:bg-emerald-400"
+            >
+              View
+            </button>
             <button
               onClick={onPay}
               className="text-sm px-3 py-1 rounded bg-emerald-500 text-black hover:bg-emerald-400"

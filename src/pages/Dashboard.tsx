@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import CreateDebtModal from '../components/CreateDebtModal';
 import DebtCard from '../components/DebtCard';
+import DebtDetailModal from '../components/DebtDetailModal';
 import DebtFilters from '../components/DebtFilters';
 import EditDebtModal from '../components/EditDebtModal';
 import StatCard from '../components/StatCard';
@@ -21,15 +22,22 @@ export default function Dashboard() {
     updateDebt,
   } = useDebtsStore();
 
-  const [openModal, setOpenModal] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [filter, setFilter] = useState<DebtFilter>('all');
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchDebts();
     fetchSummary();
   }, [fetchDebts, fetchSummary]);
+
+  const filteredDebts = useMemo(() => {
+    if (filter === 'paid') return debts.filter((d) => d.paid);
+    if (filter === 'pending') return debts.filter((d) => !d.paid);
+    return debts;
+  }, [debts, filter]);
 
   const handleExport = async () => {
     setExporting(true);
@@ -37,19 +45,15 @@ export default function Dashboard() {
     setExporting(false);
   };
 
-  const filteredDebts = useMemo(() => {
-    switch (filter) {
-      case 'paid':
-        return debts.filter((d) => d.paid);
-      case 'pending':
-        return debts.filter((d) => !d.paid);
-      default:
-        return debts;
-    }
-  }, [debts, filter]);
+  const handleSaveEdit = async (payload: Partial<Debt>) => {
+    if (!editingDebt) return;
+    await updateDebt(editingDebt.id, payload);
+    setEditingDebt(null);
+  };
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold">Dashboard</h1>
 
@@ -63,7 +67,7 @@ export default function Dashboard() {
           </button>
 
           <button
-            onClick={() => setOpenModal(true)}
+            onClick={() => setOpenCreateModal(true)}
             className="bg-emerald-500 text-black px-4 py-2 rounded-lg font-medium hover:bg-emerald-400"
           >
             + New Debt
@@ -71,7 +75,28 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <CreateDebtModal open={openModal} onClose={() => setOpenModal(false)} />
+      {/* Modals */}
+      <CreateDebtModal
+        open={openCreateModal}
+        onClose={() => setOpenCreateModal(false)}
+      />
+
+      {editingDebt && (
+        <EditDebtModal
+          debt={editingDebt}
+          onClose={() => setEditingDebt(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
+
+      {selectedDebt && (
+        <DebtDetailModal
+          debt={selectedDebt}
+          open={!!selectedDebt}
+          onClose={() => setSelectedDebt(null)}
+        />
+      )}
+
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
@@ -81,6 +106,8 @@ export default function Dashboard() {
         <StatCard label="Paid Debts" value={summary?.countPaid ?? 0} />
         <StatCard label="Pending Debts" value={summary?.countPending ?? 0} />
       </div>
+
+      {/* Filters */}
       <DebtFilters value={filter} onChange={setFilter} />
 
       {/* List */}
@@ -95,6 +122,7 @@ export default function Dashboard() {
               onPay={() => markAsPaid(debt.id)}
               onDelete={() => removeDebt(debt.id)}
               onEdit={() => setEditingDebt(debt)}
+              onView={() => setSelectedDebt(debt)}
             />
           ))}
 
@@ -102,17 +130,6 @@ export default function Dashboard() {
           <p className="text-gray-500 text-sm">
             No {filter === 'all' ? '' : filter} debts found
           </p>
-        )}
-
-        {editingDebt && (
-          <EditDebtModal
-            debt={editingDebt}
-            onClose={() => setEditingDebt(null)}
-            onSave={async (payload) => {
-              await updateDebt(editingDebt.id, payload);
-              setEditingDebt(null);
-            }}
-          />
         )}
       </div>
     </div>
