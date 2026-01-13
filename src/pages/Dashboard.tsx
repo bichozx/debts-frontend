@@ -1,28 +1,33 @@
+import { useEffect, useState } from 'react';
+
 import CreateDebtModal from '../components/CreateDebtModal';
+import type { Debt } from '../types/Debt.interface';
 import DebtCard from '../components/DebtCard';
+import EditDebtModal from '../components/EditDebtModal';
 import StatCard from '../components/StatCard';
 import { exportDebtsCsv } from '../services/debts/debts.service';
 import { useDebtsStore } from '../stores/debetStore/debts.store';
-import { useEffect } from 'react';
-import { useState } from 'react';
 
 export default function Dashboard() {
-  const { debts, fetchDebts, loading, markAsPaid, removeDebt } =
-    useDebtsStore();
+  const {
+    debts,
+    summary,
+    fetchDebts,
+    fetchSummary,
+    loading,
+    markAsPaid,
+    removeDebt,
+    updateDebt,
+  } = useDebtsStore();
 
   const [openModal, setOpenModal] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
 
   useEffect(() => {
     fetchDebts();
-  }, [fetchDebts]);
-
-  const total =
-    debts.reduce((acc, d) => acc + Math.round(Number(d.amount) * 100), 0) / 100;
-  const paid = debts.filter((d) => {
-    return d.paid;
-  }).length;
-  const pending = debts.filter((d) => !d.paid).length;
+    fetchSummary();
+  }, [fetchDebts, fetchSummary]);
 
   const handleExport = async () => {
     setExporting(true);
@@ -56,9 +61,12 @@ export default function Dashboard() {
       <CreateDebtModal open={openModal} onClose={() => setOpenModal(false)} />
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Total Amount" value={`$${total.toLocaleString()}`} />
-        <StatCard label="Paid Debts" value={paid} />
-        <StatCard label="Pending Debts" value={pending} />
+        <StatCard
+          label="Total Amount"
+          value={`$${summary?.totalAmount.toLocaleString() ?? '0'}`}
+        />
+        <StatCard label="Paid Debts" value={summary?.countPaid ?? 0} />
+        <StatCard label="Pending Debts" value={summary?.countPending ?? 0} />
       </div>
 
       {/* List */}
@@ -72,11 +80,22 @@ export default function Dashboard() {
               debt={debt}
               onPay={() => markAsPaid(debt.id)}
               onDelete={() => removeDebt(debt.id)}
+              onEdit={() => setEditingDebt(debt)}
             />
           ))}
 
         {!loading && debts.length === 0 && (
           <p className="text-gray-500 text-sm">No debts found</p>
+        )}
+        {editingDebt && (
+          <EditDebtModal
+            debt={editingDebt}
+            onClose={() => setEditingDebt(null)}
+            onSave={async (payload) => {
+              await updateDebt(editingDebt.id, payload);
+              setEditingDebt(null);
+            }}
+          />
         )}
       </div>
     </div>

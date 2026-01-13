@@ -1,4 +1,5 @@
 import type { Debt } from '../../types/Debt.interface';
+import type { DebtSummary } from '../../types/DebtSummary.interface';
 import { api } from '../api/apiBase';
 
 export const getDebts = async (): Promise<Debt[]> => {
@@ -48,4 +49,20 @@ export const exportDebtsCsv = async (): Promise<void> => {
   window.URL.revokeObjectURL(url);
 };
 
-//GET http://localhost:4001/debts/export?format=csv
+export const getDebtSummary = async (): Promise<DebtSummary> => {
+  const { data } = await api.get('/debts/summary');
+  return {
+    ...data,
+    totalAmount: Number(data.totalAmount),
+    paidAmount: Number(data.paidAmount),
+    pendingAmount: Number(data.pendingAmount),
+  };
+};
+
+export const updateDebt = async (
+  id: string,
+  payload: { amount?: number; description?: string }
+): Promise<Debt> => {
+  const { data } = await api.patch(`/debts/${id}`, payload);
+  return data;
+};
