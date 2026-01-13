@@ -1,28 +1,44 @@
+import type { CreateDebtModalProps } from '../types/Debt.interface';
+import toast from 'react-hot-toast';
 import { useDebtsStore } from '../stores/debetStore/debts.store';
 import { useState } from 'react';
 
 export default function CreateDebtModal({
   open,
   onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+}: CreateDebtModalProps) {
   const createDebt = useDebtsStore((s) => s.createDebt);
+
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!open) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
-    await createDebt(Number(amount), description);
-    setLoading(false);
-    onClose();
-    setAmount('');
-    setDescription('');
+
+    const numericAmount = Number(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      toast.error('Must be greater than zero');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await createDebt(numericAmount, description);
+
+      toast.success('Debt created successfully');
+      onClose();
+      setAmount('');
+      setDescription('');
+    } catch {
+      toast.error('Failed to create debt');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,6 +57,7 @@ export default function CreateDebtModal({
             className="w-full bg-transparent border border-gray-700 text-white rounded-lg px-3 py-2 outline-none focus:border-emerald-500"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            disabled={loading}
           />
 
           <input
@@ -49,18 +66,21 @@ export default function CreateDebtModal({
             className="w-full bg-transparent border border-gray-700 text-white rounded-lg px-3 py-2 outline-none focus:border-emerald-500"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            disabled={loading}
           />
 
           <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800"
+              disabled={loading}
+              className="flex-1 py-2 rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 disabled:opacity-50"
             >
               Cancel
             </button>
 
             <button
+              type="submit"
               disabled={loading}
               className="flex-1 py-2 rounded-lg bg-emerald-500 text-black font-medium hover:bg-emerald-400 disabled:opacity-50"
             >

@@ -14,6 +14,11 @@ export interface UpdateDebtPayload {
   description?: string;
 }
 
+export interface CreateDebtModalProps {
+  open: boolean;
+  onClose: () => void;
+}
+
 export type DebtFilter = 'all' | 'pending' | 'paid';
 export interface DebtFiltersProps {
   value: DebtFilter;
